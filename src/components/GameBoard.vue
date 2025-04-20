@@ -1,5 +1,11 @@
 <template>
   <div class="game-wrapper">
+    <!-- Puntaje -->
+    <div class="score-board">
+      <p class="score">Puntaje: {{ score }}</p>
+      <p class="high-score">Récord: {{ highScore }}</p>
+    </div>
+
     <!-- Bolita flotante -->
     <div class="floating-row">
       <div
@@ -32,7 +38,12 @@
         >
           <div
             v-if="cell > 0"
-            :class="['ball', `ball-${cell}`]"
+            :class="[
+              'ball',
+              `ball-${cell}`,
+              fusedCells.some(([r, c]) => r === rowIndex && c === colIndex) ? 'fuse' : ''
+            ]"
+
           >
             {{ cell }}
           </div>
@@ -52,7 +63,15 @@ import { useGameStore } from '../stores/gameStore'
 import GameOver from './GameOver.vue'
 
 const game = useGameStore()
-const { board, currentBall, isGameOver } = storeToRefs(game)
+const {
+  board,
+  currentBall,
+  isGameOver,
+  score,
+  highScore,
+  fusedCells // 👈 Faltaba esto
+} = storeToRefs(game)
+
 const columns = board.value[0].length
 
 // 🎮 Teclado
@@ -99,7 +118,6 @@ onUnmounted(() => {
 })
 </script>
 
-
 <style scoped>
 .game-wrapper {
   position: relative;
@@ -108,6 +126,41 @@ onUnmounted(() => {
   align-items: center;
   touch-action: manipulation;
 }
+.score-board {
+  background: linear-gradient(135deg, #2c5048, #485e34);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.score-board:hover {
+  transform: scale(1.02);
+}
+
+.score, .high-score {
+  font-size: 20px;
+  margin: 4px 0;
+  text-shadow: 1px 1px 2px black;
+}
+
+.score {
+  color: #00e676;
+}
+
+.high-score {
+  color: #ffd600;
+}
+
+@keyframes floatIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 
 .floating-row {
   display: flex;

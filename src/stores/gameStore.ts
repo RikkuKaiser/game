@@ -10,7 +10,10 @@ export const useGameStore = defineStore('game', {
       value: 1,
       column: Math.floor(COLUMNS / 2),
     },
-    isGameOver: false // ✅ Nuevo estado
+    isGameOver: false,
+    score: 0,
+    highScore: Number(localStorage.getItem('highScore')) || 0,
+    fusedCells: [] as [number, number][] // ✅ Nuevas celdas animadas
   }),
 
   actions: {
@@ -18,6 +21,8 @@ export const useGameStore = defineStore('game', {
     initBoard() {
       this.board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(0))
       this.isGameOver = false
+      this.score = 0
+      this.fusedCells = []
       this.generateBall()
     },
 
@@ -57,12 +62,13 @@ export const useGameStore = defineStore('game', {
       this.applyGravity()
 
       this.generateBall()
-      this.checkGameOver() // ✅ Verificamos si se acabó el juego
+      this.checkGameOver()
     },
 
     // Fusiona adyacentes iguales y elimina si llega a 11
     handleFusionChain(row: number, col: number) {
       let didFuse = false
+      this.fusedCells = [] // ✅ Limpiar antes de procesar
 
       do {
         didFuse = false
@@ -87,7 +93,7 @@ export const useGameStore = defineStore('game', {
             const newValue = value + 1
 
             if (newValue === 11) {
-              this.board[targetRow][targetCol] = 0 // eliminar bolita
+              this.board[targetRow][targetCol] = 0
             } else {
               this.board[targetRow][targetCol] = newValue
             }
@@ -96,12 +102,29 @@ export const useGameStore = defineStore('game', {
             row = targetRow
             col = targetCol
 
+            // ✅ Agrega celda fusionada para animación
+            this.fusedCells.push([targetRow, targetCol])
+
+            // 🟢 Puntaje sumado
+            this.score += newValue
+
+            // 🟣 Verifica récord
+            if (this.score > this.highScore) {
+              this.highScore = this.score
+              localStorage.setItem('highScore', String(this.highScore))
+            }
+
             this.applyGravity()
             didFuse = true
             break
           }
         }
       } while (didFuse)
+
+      // ✅ Eliminar celdas animadas luego de un breve tiempo
+      setTimeout(() => {
+        this.fusedCells = []
+      }, 200)
     },
 
     // Hace que las bolitas caigan hacia abajo
@@ -137,7 +160,7 @@ export const useGameStore = defineStore('game', {
       }
     },
 
-    // ✅ Verifica si ya no queda espacio
+    // Verifica si ya no queda espacio
     checkGameOver() {
       const hasEmpty = this.board.some(row => row.includes(0))
       if (!hasEmpty) {
